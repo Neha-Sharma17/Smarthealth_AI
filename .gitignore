@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+health_log.csv
+users.json
+.streamlit/
+*.h5
+*.pkl
