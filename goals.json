@@ -2,15 +2,15 @@
   "neha11_yahoo_com": [
     {
       "text": "drink 8 glass of water",
-      "category": "\ud83d\ude34 Sleep",
+      "category": "\ud83d\udca7 Water",
       "done": true,
       "created": "14 Apr 2026"
     },
     {
-      "text": "drink 8 glass of water",
-      "category": "\ud83d\udca7 Water",
-      "done": false,
-      "created": "14 Apr 2026"
+      "text": "daily sleep at 10 pm",
+      "category": "\ud83d\ude34 Sleep",
+      "done": true,
+      "created": "15 Apr 2026"
     }
   ],
   "adtiya21_yahoo_com": []
