@@ -751,6 +751,100 @@ def main_app():
                                "smarthealth_report.csv", "text/csv")
         else:
             st.info("📸 Take your first photo in Live Scan to generate analytics!")
+    
+    # ══════════════════════════════════════════════════════════════════════════
+    #  TAB 8 — ACHIEVEMENTS & BADGES
+    # ══════════════════════════════════════════════════════════════════════════
+    with selected[7]:
+        st.markdown("## 🏆 Achievements & Badges")
+        score,_=calc_wellness_score()
+        sc=st.session_state.scan_count
+        cts=st.session_state.emotion_counts
+        all_badges=[
+            ("🥇","Wellness Champion","Score 85+","badge-gold",    score>=85),
+            ("🥈","Wellness Star",    "Score 70+","badge-silver",  score>=70),
+            ("🥉","Getting Better",   "Score 55+","badge-bronze",  score>=55),
+            ("📸","Scan Master",      "20+ scans", "badge-green",  sc>=20),
+            ("📸","Active Scanner",   "10+ scans", "badge-green",  sc>=10),
+            ("📸","First Scan",       "1+ scan",   "badge-silver", sc>=1),
+            ("😄","Happy Soul",       "5 happy detections","badge-gold",cts.get("happy",0)>=5),
+            ("🧘","Zen Master",       "5 neutral detections","badge-silver",cts.get("neutral",0)>=5),
+            ("💪","Resilient",        "Detected anger & recovered","badge-bronze",cts.get("angry",0)>=1),
+            ("🌟","Explorer",         "Try all tabs","badge-gold",sc>=5),
+            ("📔","Journaler",        "Write 3 journal entries","badge-silver",len(load_json(JOURNAL_FILE).get(st.session_state.user_email.replace("@","_").replace(".","_"),[]))>=3),
+            ("🎯","Goal Setter",      "Add 3 goals","badge-bronze",len(load_json(GOALS_FILE).get(st.session_state.user_email.replace("@","_").replace(".","_"),[]))>=3),
+        ]
+        st.markdown("### 🔓 Earned Badges")
+        earned=[b for b in all_badges if b[4]]
+        if not earned: st.info("No badges yet — take a scan, write a journal entry, or set a goal!")
+        cols=st.columns(4)
+        for i,(icon,name,desc,bc,_) in enumerate(earned):
+            with cols[i%4]:
+                st.markdown(f'<div class="card" style="text-align:center;padding:20px 12px"><div style="font-size:36px;margin-bottom:8px">{icon}</div><div style="font-family:\'Syne\',sans-serif;font-size:14px;color:#eef0f8;margin-bottom:4px">{name}</div><div style="font-size:11px;color:#5a6080">{desc}</div><span class="badge {bc}" style="margin-top:8px;display:inline-flex">Earned ✓</span></div>',unsafe_allow_html=True)
+        st.markdown("---")
+        st.markdown("### 🔒 Locked Badges")
+        locked=[b for b in all_badges if not b[4]]
+        cols2=st.columns(4)
+        for i,(icon,name,desc,bc,_) in enumerate(locked):
+            with cols2[i%4]:
+                st.markdown(f'<div class="card" style="text-align:center;padding:20px 12px;opacity:.4"><div style="font-size:36px;margin-bottom:8px">🔒</div><div style="font-family:\'Syne\',sans-serif;font-size:14px;color:#eef0f8;margin-bottom:4px">{name}</div><div style="font-size:11px;color:#5a6080">{desc}</div></div>',unsafe_allow_html=True)
+    
+      # ══════════════════════════════════════════════════════════════════════════
+    #  TAB 10 — AI CHATBOT
+    # ══════════════════════════════════════════════════════════════════════════
+    with selected[9]:
+        st.markdown("## 🤖 AI Wellness Chatbot")
+        st.markdown("I'm here to listen, support and boost your mood. Talk to me anytime! 💚")
+ 
+        em_ctx=st.session_state.result["emotion"] if st.session_state.result else None
+ 
+        # Show current emotion context
+        if em_ctx:
+            col=COLORS.get(em_ctx,"#7c6fff"); emoji=EMOJIS.get(em_ctx,"😐")
+            st.markdown(f'<div style="display:inline-flex;align-items:center;gap:8px;background:{col}11;border:1px solid {col}33;border-radius:20px;padding:6px 14px;font-size:12px;color:{col};margin-bottom:14px">{emoji} Responding based on your <strong>{em_ctx}</strong> mood</div>',unsafe_allow_html=True)
+ 
+        # Chat history display
+        chat_container=st.container()
+        with chat_container:
+            if not st.session_state.chat_messages:
+                st.markdown('<div class="chat-bubble-ai">👋 Hello! I\'m your SmartHealth AI companion. I\'m here to listen and support you. How are you feeling right now? 💚</div>',unsafe_allow_html=True)
+            for msg in st.session_state.chat_messages:
+                if msg["role"]=="user":
+                    st.markdown(f'<div class="chat-bubble-user">{msg["content"]}</div>',unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="chat-bubble-ai">{msg["content"]}</div>',unsafe_allow_html=True)
+ 
+        # Quick mood buttons
+        st.markdown("<div style='height:8px'></div>",unsafe_allow_html=True)
+        st.markdown("**Quick messages:**")
+        qb=st.columns(4)
+        quick_msgs=["I'm feeling sad 😢","I need motivation 💪","I'm stressed 😰","I feel happy 😄"]
+        for i,(col,qm) in enumerate(zip(qb,quick_msgs)):
+            with col:
+                if st.button(qm,key=f"qb_{i}",use_container_width=True):
+                    st.session_state.chat_messages.append({"role":"user","content":qm})
+                    resp=get_ai_response(qm,em_ctx)
+                    st.session_state.chat_messages.append({"role":"assistant","content":resp})
+                    st.rerun()
+ 
+        # Chat input
+        with st.form("chat_form",clear_on_submit=True):
+            ci1,ci2=st.columns([5,1])
+            with ci1: user_input=st.text_input("Type your message...",label_visibility="collapsed",placeholder="How are you feeling? Tell me anything...")
+            with ci2: send=st.form_submit_button("Send 💬",use_container_width=True)
+            if send and user_input.strip():
+                st.session_state.chat_messages.append({"role":"user","content":user_input})
+                resp=get_ai_response(user_input,em_ctx)
+                st.session_state.chat_messages.append({"role":"assistant","content":resp})
+                st.rerun()
+ 
+        # Clear chat button
+        if st.session_state.chat_messages:
+            if st.button("🗑️ Clear chat",use_container_width=False):
+                st.session_state.chat_messages=[]; st.rerun()
+ 
+        st.markdown('<div style="font-size:11px;color:#5a6080;margin-top:12px;text-align:center">💙 This AI provides emotional support only. For medical emergencies, please contact a professional or use the Emergency tab.</div>',unsafe_allow_html=True)
+ 
 
     # Footer
     st.markdown("""<div style="text-align:center;color:#5a6080;font-size:12px;padding:24px 0;border-top:1px solid rgba(255,255,255,.06);margin-top:20px">
